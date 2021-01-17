@@ -203,7 +203,7 @@ class Blockchain {
             });
             if (errorLog.length > 0) {
                 reject(errorLog);
-            }  else {
+            } else {
                 resolve(errorLog);
             }
         });
