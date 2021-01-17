@@ -64,15 +64,15 @@ class Blockchain {
     _addBlock(block) {
         let self = this;
         return new Promise(async (resolve, reject) => {
-           if (self.height > 0) {
-               block.previousBlockHash = self.chain[self.chain.length - 1].hash;
-           }
-           block.time = (new Date()).getTime().toString().slice(0,-3);
-           block.height = parseInt(self.chain.length);
-           block.hash = SHA256(JSON.stringify(block)).toString();
-           self.chain.push(block);
-           self.height = self.chain.length;
-           resolve(block);
+            if (self.height > 0) {
+                block.previousBlockHash = self.chain[self.chain.length - 1].hash;
+            }
+            block.time = (new Date()).getTime().toString().slice(0,-3);
+            block.height = parseInt(self.chain.length);
+            block.hash = SHA256(JSON.stringify(block)).toString();
+            self.chain.push(block);
+            self.height = self.chain.length;
+            self.validateChain().then(() => resolve(block)).catch(() => reject('Invalid chain'));
         });
     }
 
@@ -154,7 +154,7 @@ class Blockchain {
             if(block){
                 resolve(block);
             } else {
-                resolve(null);
+                reject(null);
             }
         });
     }
@@ -195,14 +195,19 @@ class Blockchain {
         return new Promise(async (resolve, reject) => {
             let previousBlockHash = null;
             self.chain.map(b => {
-                if (!b.validate() || b.previousBlockHash != previousBlockHash) {
-                    errorLog.push(b);
-                }
+                b.validate().then(() => {
+                    if (b.previousBlockHash !== previousBlockHash) {
+                        errorLog.push(b);
+                    }
+                }).catch(() => errorLog.push(b));
             });
-            resolve(errorLog);
+            if (errorLog.length > 0) {
+                reject(errorLog);
+            }  else {
+                resolve(errorLog);
+            }
         });
     }
-
 }
 
 module.exports.Blockchain = Blockchain;   
